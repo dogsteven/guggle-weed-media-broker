@@ -298,7 +298,7 @@ class MediaBrokerApplication {
 
   private async listen() {
     this._httpsServer.listen(serverConfiguration.server.listenPort, () => {
-      console.log(`Server is running at http://${serverConfiguration.server.listenPort}:${serverConfiguration.server.listenPort}`);
+      console.log(`Server is running at http://${serverConfiguration.server.listenIp}:${serverConfiguration.server.listenPort}`);
     });
   }
 }
