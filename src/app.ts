@@ -1,5 +1,3 @@
-// import fs from "fs";
-// import path from "path";
 import express, { Application as ExpressApplication } from "express";
 import { createServer as createHttpServer, Server as HttpServer } from "http";
 import { createContainer, InjectionMode, asValue, asClass } from "awilix";
@@ -141,7 +139,7 @@ class MediaBrokerApplication {
 
       const { transportType, dtlsParameters } = request.body;
 
-      response.json(await client.connectMeeting(meetingId, username, transportType, dtlsParameters));
+      response.json(await client.connectTransport(meetingId, username, transportType, dtlsParameters));
     });
 
     this._expressApplication.post("/meetings/:meetingId/leave", async (request, response) => {

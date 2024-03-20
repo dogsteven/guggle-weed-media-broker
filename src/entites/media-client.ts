@@ -87,7 +87,7 @@ export default class MediaClient {
     }
   }
 
-  public async connectMeeting(meetingId: any, attendeeId: any, transportType: any, dtlsParameters: any): Promise<Result<any>> {
+  public async connectTransport(meetingId: any, attendeeId: any, transportType: any, dtlsParameters: any): Promise<Result<any>> {
     try {
       const response = await axios({
         url: `${this._url}/meetings/${meetingId}/connect`,
