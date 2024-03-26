@@ -87,7 +87,11 @@ class MediaBrokerApplication {
 
         const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-        return await client.endMeeting(meetingId, username);
+        const result = await client.endMeeting(meetingId, username);
+
+        this._mediaClientRepository.removeMeetingFromLookupTable(meetingId);
+
+        return result;
       }));
     });
   }
