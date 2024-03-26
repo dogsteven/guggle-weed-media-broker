@@ -1,5 +1,4 @@
 import MediaClient from "../entites/media-client";
-import { Result } from "../utils/result";
 import MediaClientRepository from "../abstractions/media-client-repository";
 import serverConfiguration from "../configurations/serverConfiguration";
 import MediaClientImplementation from "../entites/media-client";
@@ -24,49 +23,27 @@ export default class MediaClientRepositoryImplementation implements MediaClientR
     return client;
   }
 
-  public getMediaClientByMeetingId(meetingId: any): Result<MediaClient> {
+  public getMediaClientByMeetingId(meetingId: any): MediaClient {
     if (!this._lookupTable.has(meetingId)) {
-      return {
-        status: "failed",
-        message: `There is no meeting with id ${meetingId}`
-      };
+      throw `There is no meeting with id ${meetingId}`;
     }
 
-    return {
-      status: "success",
-      data: this._lookupTable.get(meetingId)
-    };
+    return this._lookupTable.get(meetingId);
   }
   
-  public addMeetingToLookupTable(meetingId: any, mediaClient: MediaClient): Result<any> {
+  public addMeetingToLookupTable(meetingId: any, mediaClient: MediaClient): void {
     if (this._lookupTable.has(meetingId)) {
-      return {
-        status: "failed",
-        message: `Meeting with id ${meetingId} already presents`
-      };
+      throw `Meeting with id ${meetingId} already presents`;
     }
 
     this._lookupTable.set(meetingId, mediaClient);
-
-    return {
-      status: "success",
-      data: {}
-    };
   }
 
-  public removeMeetingFromLookupTable(meetingId: any): Result<any> {
+  public removeMeetingFromLookupTable(meetingId: any): void {
     if (!this._lookupTable.has(meetingId)) {
-      return {
-        status: "failed",
-        message: `There is no meeting with id ${meetingId}`
-      };
+      throw `There is no meeting with id ${meetingId}`;
     }
 
     this._lookupTable.delete(meetingId);
-
-    return {
-      status: "success",
-      data: {}
-    };
   }
 }

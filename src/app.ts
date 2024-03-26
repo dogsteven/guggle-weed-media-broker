@@ -4,6 +4,7 @@ import { createContainer, InjectionMode, asValue, asClass } from "awilix";
 import MediaClientRepositoryImplementation from "./implementations/media-client-repository";
 import serverConfiguration from "./configurations/serverConfiguration";
 import MediaClientRepository from "./abstractions/media-client-repository";
+import { wrapResultAsync } from "./utils/result";
 
 class MediaBrokerApplication {
   private readonly _expressApplication: ExpressApplication;
@@ -56,236 +57,170 @@ class MediaBrokerApplication {
 
   private bootMeetingSection() {
     this._expressApplication.get("/meetings/:meetingId", async (request, response) => {
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
-
-      const client = clientResult.data;
-
-      response.json(await client.getMeetingInfo(meetingId));
+        return await client.getMeetingInfo(meetingId);
+      }));
     });
 
     this._expressApplication.post("/meetings/start", async (request, response) => {
-      const username = request.headers["x-username"] as string;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
 
-      const client = this._mediaClientRepository.pickMediaClient();
+        const client = this._mediaClientRepository.pickMediaClient();
 
-      const callResult = await client.startMeeting(username);
+        const { meetingId } = await client.startMeeting(username);
 
-      if (callResult.status === "success") {
-        this._mediaClientRepository.addMeetingToLookupTable(callResult.data.meetingId, client);
-      }
+        this._mediaClientRepository.addMeetingToLookupTable(meetingId, client);
 
-      response.json(callResult);
+        return { meetingId };
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/end", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
-
-      const client = clientResult.data;
-
-      const callResult = await client.endMeeting(meetingId, username);
-
-      if (callResult.status === "success") {
-        this._mediaClientRepository.removeMeetingFromLookupTable(meetingId);
-      }
-
-      response.json(callResult);
+        return await client.endMeeting(meetingId, username);
+      }));
     });
   }
 
   private bootAttendeeSection() {
     this._expressApplication.post("/meetings/:meetingId/join", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
-
-      const client = clientResult.data;
-
-      response.json(await client.joinMeeting(meetingId, username));
+        return await client.joinMeeting(meetingId, username);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/connect", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { transportType, dtlsParameters } = request.body;
 
-      const client = clientResult.data;
-
-      const { transportType, dtlsParameters } = request.body;
-
-      response.json(await client.connectTransport(meetingId, username, transportType, dtlsParameters));
+        return await client.connectTransport(meetingId, username, transportType, dtlsParameters);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/leave", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
-
-      const client = clientResult.data;
-
-      response.json(await client.leaveMeeting(meetingId, username));
+        return await client.leaveMeeting(meetingId, username);
+      }));
     });
   }
 
   private bootProducerSection() {
     this._expressApplication.post("/meetings/:meetingId/produceMedia", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { appData, rtpParameters } = request.body;
 
-      const client = clientResult.data;
-
-      const { appData, rtpParameters } = request.body;
-
-      response.json(await client.produceMedia(meetingId, username, appData, rtpParameters));
+        return await client.produceMedia(meetingId, username, appData, rtpParameters);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/closeProducer", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { producerType } = request.body;
 
-      const client = clientResult.data;
-
-      const { producerType } = request.body;
-
-      response.json(await client.closeProducer(meetingId, username, producerType));
+        return await client.closeProducer(meetingId, username, producerType);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/pauseProducer", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { producerType } = request.body;
 
-      const client = clientResult.data;
-
-      const { producerType } = request.body;
-
-      response.json(await client.pauseProducer(meetingId, username, producerType));
+        return await client.pauseProducer(meetingId, username, producerType);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/resumeProducer", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { producerType } = request.body;
 
-      const client = clientResult.data;
-
-      const { producerType } = request.body;
-
-      response.json(await client.resumeProducer(meetingId, username, producerType));
+        return await client.resumeProducer(meetingId, username, producerType);
+      }));
     });
   }
 
   private bootConsumerSection() {
     this._expressApplication.post("/meetings/:meetingId/consumeMedia", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { producerId, rtpCapabilities } = request.body;
 
-      const client = clientResult.data;
-
-      const { producerId, rtpCapabilities } = request.body;
-
-      response.json(await client.consumeMedia(meetingId, username, producerId, rtpCapabilities));
+        return await client.consumeMedia(meetingId, username, producerId, rtpCapabilities);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/pauseConsumer", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { consumerId } = request.body;
 
-      const client = clientResult.data;
-
-      const { consumerId } = request.body;
-
-      response.json(await client.pauseConsumer(meetingId, username, consumerId));
+        return await client.pauseConsumer(meetingId, username, consumerId);
+      }));
     });
 
     this._expressApplication.post("/meetings/:meetingId/resumeConsumer", async (request, response) => {
-      const username = request.headers["x-username"] as string;
-      const meetingId = request.params.meetingId;
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
 
-      const clientResult = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
-      if (clientResult.status === "failed") {
-        response.json(clientResult);
-        return;
-      }
+        const { consumerId } = request.body;
 
-      const client = clientResult.data;
-
-      const { consumerId } = request.body;
-
-      response.json(await client.resumeConsumer(meetingId, username, consumerId));
+        return await client.resumeConsumer(meetingId, username, consumerId);
+      }));
     });
   }
 
