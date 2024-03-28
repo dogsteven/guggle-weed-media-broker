@@ -4,7 +4,7 @@ import { createContainer, InjectionMode, asValue, asClass } from "awilix";
 import MediaClientRepositoryImplementation from "./implementations/media-client-repository";
 import serverConfiguration from "./configurations/serverConfiguration";
 import MediaClientRepository from "./abstractions/media-client-repository";
-import { wrapResultAsync } from "./utils/result";
+import { wrapResult, wrapResultAsync } from "./utils/result";
 
 class MediaBrokerApplication {
   private readonly _expressApplication: ExpressApplication;
@@ -63,6 +63,26 @@ class MediaBrokerApplication {
         const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
 
         return await client.getMeetingInfo(meetingId);
+      }));
+    });
+
+    this._expressApplication.get("/meetings/:meetingId/hostId", async (request, response) => {
+      response.json(await wrapResultAsync(async () => {
+        const meetingId = request.params.meetingId;
+
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+
+        return await client.getMeetingHostId(meetingId);
+      }));
+    });
+
+    this._expressApplication.get("/meetings/:meetingId/attendees", async (request, response) => {
+      response.json(await wrapResultAsync(async () => {
+        const meetingId = request.params.meetingId;
+
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+
+        return await client.getMeetingAttendees(meetingId);
       }));
     });
 
