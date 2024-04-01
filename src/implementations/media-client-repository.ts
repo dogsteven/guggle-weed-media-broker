@@ -25,7 +25,7 @@ export default class MediaClientRepositoryImplementation implements MediaClientR
 
   public getMediaClientByMeetingId(meetingId: any): MediaClient {
     if (!this._lookupTable.has(meetingId)) {
-      throw `There is no meeting with id ${meetingId}`;
+      throw new Error(`There is no meeting with id ${meetingId}`);
     }
 
     return this._lookupTable.get(meetingId);
@@ -33,7 +33,7 @@ export default class MediaClientRepositoryImplementation implements MediaClientR
   
   public addMeetingToLookupTable(meetingId: any, mediaClient: MediaClient): void {
     if (this._lookupTable.has(meetingId)) {
-      throw `Meeting with id ${meetingId} already presents`;
+      throw new Error(`Meeting with id ${meetingId} already presents`);
     }
 
     this._lookupTable.set(meetingId, mediaClient);
@@ -41,7 +41,7 @@ export default class MediaClientRepositoryImplementation implements MediaClientR
 
   public removeMeetingFromLookupTable(meetingId: any): void {
     if (!this._lookupTable.has(meetingId)) {
-      throw `There is no meeting with id ${meetingId}`;
+      throw new Error(`There is no meeting with id ${meetingId}`);
     }
 
     this._lookupTable.delete(meetingId);

@@ -4,7 +4,8 @@ import { createContainer, InjectionMode, asValue, asClass } from "awilix";
 import MediaClientRepositoryImplementation from "./implementations/media-client-repository";
 import serverConfiguration from "./configurations/serverConfiguration";
 import MediaClientRepository from "./abstractions/media-client-repository";
-import { wrapResult, wrapResultAsync } from "./utils/result";
+import { wrapResultAsync } from "./utils/result";
+import { json } from "body-parser"
 
 class MediaBrokerApplication {
   private readonly _expressApplication: ExpressApplication;
@@ -28,6 +29,8 @@ class MediaBrokerApplication {
     });
 
     const expressApplication = express();
+
+    expressApplication.use(json());
 
     const httpsServer = createHttpServer(expressApplication);
 
@@ -218,6 +221,19 @@ class MediaBrokerApplication {
         const { producerId, rtpCapabilities } = request.body;
 
         return await client.consumeMedia(meetingId, username, producerId, rtpCapabilities);
+      }));
+    });
+
+    this._expressApplication.post("/meetings/:meetingId/closeConsumer", async (request, response) => {
+      response.json(await wrapResultAsync(async () => {
+        const username = request.headers["x-username"] as string;
+        const meetingId = request.params.meetingId;
+
+        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+
+        const { consumerId } = request.body;
+
+        return await client.closeConsumer(meetingId, username, consumerId);
       }));
     });
 
