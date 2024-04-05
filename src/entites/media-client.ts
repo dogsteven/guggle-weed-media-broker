@@ -7,30 +7,6 @@ export default class MediaClient {
   public constructor(url: string) {
     this._url = url;
   }
-  
-  public async getMeetingInfo(meetingId: any): Promise<any> {
-    const response = await axios({
-      url: `${this._url}/meetings/${meetingId}`,
-      method: "get",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-
-    return unwrapResult(response.data);
-  }
-
-  public async getMeetingHostId(meetingId: any): Promise<any> {
-    const response = await axios({
-      url: `${this._url}/meetings/${meetingId}/hostId`,
-      method: "get",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
-
-    return unwrapResult(response.data);
-  }
 
   public async getMeetingAttendees(meetingId: any): Promise<any> {
     const response = await axios({
@@ -44,26 +20,24 @@ export default class MediaClient {
     return unwrapResult(response.data);
   }
 
-  public async startMeeting(attendeeId: any): Promise<{ meetingId: any }> {
+  public async startMeeting(): Promise<{ meetingId: any }> {
     const response = await axios({
       url: `${this._url}/meetings/start`,
       method: "post",
       headers: {
-        "Content-Type": "application/json",
-        "x-username": attendeeId
+        "Content-Type": "application/json"
       }
     });
 
     return unwrapResult(response.data);
   }
 
-  public async endMeeting(meetingId: any, attendeeId: any): Promise<any> {
+  public async endMeeting(meetingId: any): Promise<any> {
     const response = await axios({
       url: `${this._url}/meetings/${meetingId}/end`,
       method: "post",
       headers: {
-        "Content-Type": "application/json",
-        "x-username": attendeeId
+        "Content-Type": "application/json"
       }
     });
 

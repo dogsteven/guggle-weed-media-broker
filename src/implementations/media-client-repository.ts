@@ -1,45 +1,47 @@
 import MediaClient from "../entites/media-client";
 import MediaClientRepository from "../abstractions/media-client-repository";
 import serverConfiguration from "../configurations/serverConfiguration";
-import MediaClientImplementation from "../entites/media-client";
 
 export default class MediaClientRepositoryImplementation implements MediaClientRepository {
-  private readonly _clients: MediaClient[];
+  private static readonly _clients = serverConfiguration.mediaServers.map((url) => new MediaClient(url));
+
   private _currentClientIndex: number;
 
-  private readonly _lookupTable: Map<any, MediaClient>;
+  private readonly _lookupTable: Map<any, number>;
 
   public constructor() {
-    this._clients = serverConfiguration.mediaServers.map((url) => new MediaClientImplementation(url));
     this._currentClientIndex = 0;
-    this._lookupTable = new Map<any, MediaClient>();
+    this._lookupTable = new Map<any, number>();
   }
 
-  public pickMediaClient(): MediaClient {
-    const client = this._clients[this._currentClientIndex];
+  public pick(): { client: MediaClient, index: number } {
+    const client = MediaClientRepositoryImplementation._clients[this._currentClientIndex];
+    const index = this._currentClientIndex;
 
-    this._currentClientIndex = (this._currentClientIndex + 1) % this._clients.length;
+    this._currentClientIndex = (this._currentClientIndex + 1) % serverConfiguration.mediaServers.length;
 
-    return client;
+    return { client, index };
   }
 
-  public getMediaClientByMeetingId(meetingId: any): MediaClient {
+  public get(meetingId: any): MediaClient {
     if (!this._lookupTable.has(meetingId)) {
       throw new Error(`There is no meeting with id ${meetingId}`);
     }
 
-    return this._lookupTable.get(meetingId);
+    const index = this._lookupTable.get(meetingId);
+
+    return MediaClientRepositoryImplementation._clients[index];
   }
   
-  public addMeetingToLookupTable(meetingId: any, mediaClient: MediaClient): void {
+  public set(meetingId: any, index: number): void {
     if (this._lookupTable.has(meetingId)) {
       throw new Error(`Meeting with id ${meetingId} already presents`);
     }
 
-    this._lookupTable.set(meetingId, mediaClient);
+    this._lookupTable.set(meetingId, index);
   }
 
-  public removeMeetingFromLookupTable(meetingId: any): void {
+  public remove(meetingId: any): void {
     if (!this._lookupTable.has(meetingId)) {
       throw new Error(`There is no meeting with id ${meetingId}`);
     }

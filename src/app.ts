@@ -59,31 +59,11 @@ class MediaBrokerApplication {
   }
 
   private bootMeetingSection() {
-    this._expressApplication.get("/meetings/:meetingId", async (request, response) => {
-      response.json(await wrapResultAsync(async () => {
-        const meetingId = request.params.meetingId;
-
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
-
-        return await client.getMeetingInfo(meetingId);
-      }));
-    });
-
-    this._expressApplication.get("/meetings/:meetingId/hostId", async (request, response) => {
-      response.json(await wrapResultAsync(async () => {
-        const meetingId = request.params.meetingId;
-
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
-
-        return await client.getMeetingHostId(meetingId);
-      }));
-    });
-
     this._expressApplication.get("/meetings/:meetingId/attendees", async (request, response) => {
       response.json(await wrapResultAsync(async () => {
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         return await client.getMeetingAttendees(meetingId);
       }));
@@ -91,13 +71,11 @@ class MediaBrokerApplication {
 
     this._expressApplication.post("/meetings/start", async (request, response) => {
       response.json(await wrapResultAsync(async () => {
-        const username = request.headers["x-username"] as string;
+        const { client, index } = this._mediaClientRepository.pick();
 
-        const client = this._mediaClientRepository.pickMediaClient();
+        const { meetingId } = await client.startMeeting();
 
-        const { meetingId } = await client.startMeeting(username);
-
-        this._mediaClientRepository.addMeetingToLookupTable(meetingId, client);
+        this._mediaClientRepository.set(meetingId, index);
 
         return { meetingId };
       }));
@@ -105,14 +83,13 @@ class MediaBrokerApplication {
 
     this._expressApplication.post("/meetings/:meetingId/end", async (request, response) => {
       response.json(await wrapResultAsync(async () => {
-        const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
-        const result = await client.endMeeting(meetingId, username);
+        const result = await client.endMeeting(meetingId);
 
-        this._mediaClientRepository.removeMeetingFromLookupTable(meetingId);
+        this._mediaClientRepository.remove(meetingId);
 
         return result;
       }));
@@ -125,7 +102,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         return await client.joinMeeting(meetingId, username);
       }));
@@ -136,7 +113,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { transportType, dtlsParameters } = request.body;
 
@@ -149,7 +126,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         return await client.leaveMeeting(meetingId, username);
       }));
@@ -162,7 +139,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { appData, rtpParameters } = request.body;
 
@@ -175,7 +152,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { producerType } = request.body;
 
@@ -188,7 +165,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { producerType } = request.body;
 
@@ -201,7 +178,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { producerType } = request.body;
 
@@ -216,7 +193,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { producerId, rtpCapabilities } = request.body;
 
@@ -229,7 +206,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { consumerId } = request.body;
 
@@ -242,7 +219,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { consumerId } = request.body;
 
@@ -255,7 +232,7 @@ class MediaBrokerApplication {
         const username = request.headers["x-username"] as string;
         const meetingId = request.params.meetingId;
 
-        const client = this._mediaClientRepository.getMediaClientByMeetingId(meetingId);
+        const client = this._mediaClientRepository.get(meetingId);
 
         const { consumerId } = request.body;
 
